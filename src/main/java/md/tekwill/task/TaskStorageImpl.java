@@ -8,11 +8,13 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TaskStorageImpl implements TaskStorage {
+
     private static final String CONNECTION_URL = "jdbc:postgresql://localhost:5432/test";
     private static final String USERNAME = "postgres";
     private static final String PASSWORD = "password";
@@ -128,19 +130,23 @@ public class TaskStorageImpl implements TaskStorage {
 
     @Override
     public void create(Task task) {
-        String insertSQL = "INSERT INTO task(id, title, description, targetdate, done) VALUES (?, ?, ?, ?, ?)";
+        String insertSQL = "INSERT INTO task(title, description, targetdate, done) VALUES ( ?, ?, ?, ?)";
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)) {
 
-            preparedStatement.setInt(1, task.getId());
-            preparedStatement.setString(2, task.getTitle());
-            preparedStatement.setString(3, task.getDescription());
-            preparedStatement.setDate(4, Date.valueOf(task.getTargetDate()));
-            preparedStatement.setBoolean(5, task.isDone());
+            preparedStatement.setString(1, task.getTitle());
+            preparedStatement.setString(2, task.getDescription());
+            preparedStatement.setDate(3, Date.valueOf(task.getTargetDate()));
+            preparedStatement.setBoolean(4, task.isDone());
 
             int row = preparedStatement.executeUpdate();
             System.out.println("Inserted " + row + " row(s)!");
-            System.out.println("Created task with " + task.getId() + " id ");
+
+            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+            while (generatedKeys.next()) {
+                System.out.println("Created task with " + generatedKeys.getInt(1) + " id ");
+            }
+
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
