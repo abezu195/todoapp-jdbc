@@ -1,5 +1,7 @@
 package md.tekwill.task;
 
+import java.util.List;
+
 public class TaskManager {
 
     private final TaskStorage taskStorage;
@@ -8,8 +10,12 @@ public class TaskManager {
         this.taskStorage = new TaskStorageImpl();
     }
 
-    public Task[] getAll() {
+    public List<Task> getAll() {
         return taskStorage.findAll();
+    }
+
+    public Task getById(int id) {
+        return taskStorage.findById(id);
     }
 
     public void add(Task task) {
@@ -31,11 +37,6 @@ public class TaskManager {
     }
 
     public void update(int id, boolean done) {
-        Task task = taskStorage.findById(id);
-        if (task != null) {
-            task.setDone(done);
-        } else {
-            System.out.println("No md.tekwill.task found with id " + id + "! Unable to update.");
-        }
+        taskStorage.updateDone(id, done);
     }
 }

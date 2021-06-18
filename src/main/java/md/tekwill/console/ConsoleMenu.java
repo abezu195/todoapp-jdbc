@@ -3,6 +3,8 @@ package md.tekwill.console;
 import md.tekwill.task.Task;
 import md.tekwill.task.TaskManager;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleMenu {
@@ -21,9 +23,10 @@ public class ConsoleMenu {
             System.out.println("\n\tWelcome to TODO List App");
             System.out.println("Available options:" +
                                        "\n[1] View all tasks" +
-                                       "\n[2] Add new md.tekwill.task" +
-                                       "\n[3] Delete a md.tekwill.task" +
-                                       "\n[4] Update a md.tekwill.task" +
+                                       "\n[2] Add new task" +
+                                       "\n[3] Delete a task" +
+                                       "\n[4] Update a task" +
+                                       "\n[5] Show single task" +
                                        "\n[0] Exit");
             System.out.print(">> ");
             exitOptionNotSelected = handleUserChoice(scanner.nextInt());
@@ -45,6 +48,9 @@ public class ConsoleMenu {
             case 4:
                 updateTask();
                 return true;
+            case 5:
+                showSingleTask();
+                return true;
             case 0:
                 System.out.println("KTHXBYE");
                 return false;
@@ -55,8 +61,8 @@ public class ConsoleMenu {
     }
 
     private void showAllTasks() {
-        Task[] tasks = taskManager.getAll();
-        if (tasks.length > 0) {
+        List<Task> tasks = taskManager.getAll();
+        if (!tasks.isEmpty()) {
             System.out.println("All tasks: ");
             for (Task task : tasks) {
                 System.out.println("\t[" + task.getId() + "] " + task.getTitle() + " " +
@@ -70,22 +76,40 @@ public class ConsoleMenu {
         }
     }
 
+    private void showSingleTask() {
+        System.out.println("Input ID of task to show: ");
+        int id = scanner.nextInt(); //5
+        scanner.nextLine();
+
+        Task task = taskManager.getById(id);
+        if (task == null) {
+            System.out.println("No task is found with id " + id);
+        } else {
+            System.out.println("\t[" + task.getId() + "] " + task.getTitle() + " " +
+                                       "\n\tDescription: " + task.getDescription() +
+                                       "\n\tTarget date: " + task.getTargetDate() +
+                                       "\n\tDone: " + task.isDone() +
+                                       "\n");
+        }
+
+    }
+
     private void addNewTask() {
-        System.out.println("Input unique ID (integer) for this md.tekwill.task: ");
+        System.out.println("Input unique ID (integer) for this task: ");
         int uniqueId = scanner.nextInt();
         scanner.nextLine();
-        System.out.println("Insert a title for your md.tekwill.task: ");
+        System.out.println("Insert a title for your task: ");
         String title = scanner.nextLine();
-        System.out.println("Provide a description of your md.tekwill.task: ");
+        System.out.println("Provide a description of your task: ");
         String description = scanner.nextLine();
-        System.out.println("Insert the target date for your md.tekwill.task: ");
-        String targetDate = scanner.nextLine();
-        taskManager.add(new Task(uniqueId, title, description, targetDate));
+        System.out.println("Insert the target date for your task (yyyy-MM-dd): ");
+        LocalDate targetDate = LocalDate.parse(scanner.nextLine());
+        taskManager.add(new Task(uniqueId, title, description, targetDate, false));
     }
 
     private void deleteTask() {
         showAllTasks();
-        System.out.println("Input the ID of md.tekwill.task to delete: ");
+        System.out.println("Input the ID of task to delete: ");
         int id = scanner.nextInt();
         scanner.nextLine();
         taskManager.delete(id);
@@ -93,10 +117,10 @@ public class ConsoleMenu {
 
     private void updateTask() {
         showAllTasks();
-        System.out.println("Input the ID of md.tekwill.task to edit: ");
+        System.out.println("Input the ID of task to edit: ");
         int id = scanner.nextInt();
         scanner.nextLine();
-        System.out.println("Is the md.tekwill.task done? (accepted values are: true | false)");
+        System.out.println("Is the task done? (accepted values are: true | false)");
         boolean done = scanner.nextBoolean();
         taskManager.update(id, done);
     }

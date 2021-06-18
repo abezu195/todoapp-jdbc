@@ -1,19 +1,21 @@
 package md.tekwill.task;
 
+import java.time.LocalDate;
+
 public class Task {
     private final int id;
     private final String title;
     private final String description;
-    private final String targetDate;
+    private final LocalDate targetDate;
     private boolean done;
 
 
-    public Task(int id, String title, String when, String targetDate) {
+    public Task(int id, String title, String when, LocalDate targetDate, boolean done) {
         this.id = id;
         this.title = title;
         this.description = when;
         this.targetDate = targetDate;
-        this.done = false;
+        this.done = done;
     }
 
     public int getId() {
@@ -28,7 +30,7 @@ public class Task {
         return description;
     }
 
-    public String getTargetDate() {
+    public LocalDate getTargetDate() {
         return targetDate;
     }
 

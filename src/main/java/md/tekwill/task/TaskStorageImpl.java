@@ -3,18 +3,19 @@ package md.tekwill.task;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.postgresql.ds.common.BaseDataSource;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TaskStorageImpl implements TaskStorage {
     private static final String CONNECTION_URL = "jdbc:postgresql://localhost:5432/test";
     private static final String USERNAME = "postgres";
-    private static final String PASSWORD = "postgres";
-
-    private int idCounter = 1;
+    private static final String PASSWORD = "password";
 
     private final BaseDataSource dataSource;
 
@@ -26,32 +27,120 @@ public class TaskStorageImpl implements TaskStorage {
     }
 
     @Override
-    public Task[] findAll() {
-        return new Task[0];
+    public List<Task> findAll() {
+        List<Task> tasks = new ArrayList<>();
+
+        String selectSQL = "SELECT id, title, description, targetdate, done FROM task";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectSQL)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+
+                int id = resultSet.getInt("id");
+                String title = resultSet.getString("title");
+                String description = resultSet.getString("description");
+                Date date = resultSet.getDate("targetDate");
+                LocalDate targetDate = date.toLocalDate();
+                boolean done = resultSet.getBoolean("done");
+
+                tasks.add(new Task(id, title, description, targetDate, done));
+            }
+
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        return tasks;
     }
 
     @Override
-    public Task findById(int id) {
-        return null;
+    public Task findById(int idToFind) {
+        Task task = null;
+        String selectSQL = "SELECT id, title, description, targetdate, done FROM task where id = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectSQL)) {
+            preparedStatement.setInt(1, idToFind);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+
+                int id = resultSet.getInt("id");
+                String title = resultSet.getString("title");
+                String description = resultSet.getString("description");
+                Date date = resultSet.getDate("targetDate");
+                LocalDate targetDate = date.toLocalDate();
+                boolean done = resultSet.getBoolean("done");
+
+                task = new Task(id, title, description, targetDate, done);
+            }
+
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+
+        return task;
     }
 
     @Override
     public void removeById(int id) {
+        String deleteSQL = "DELETE FROM task WHERE ID = ?";
 
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(deleteSQL)) {
+            preparedStatement.setInt(1, id);
+
+            int nrOfAffectedRows = preparedStatement.executeUpdate();
+
+            if (nrOfAffectedRows > 0) {
+                System.out.println("Successfully deleted " + nrOfAffectedRows + " row(s)!");
+            } else {
+                System.out.println("No rows affected!");
+            }
+
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
+    }
+
+    @Override
+    public void updateDone(int id, boolean done) {
+        String updateSQL = "UPDATE task SET done = ? WHERE ID = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(updateSQL)) {
+            preparedStatement.setBoolean(1, done);
+            preparedStatement.setInt(2, id);
+
+            int nrOfAffectedRows = preparedStatement.executeUpdate();
+
+            if (nrOfAffectedRows > 0) {
+                System.out.println("Successfully updated " + nrOfAffectedRows + " row(s)!");
+            } else {
+                System.out.println("No rows affected!");
+            }
+
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
     }
 
     @Override
     public void create(Task task) {
-        final String insertSQL = "INSERT INTO task(id, title, description, targetdate, done) VALUES (?, ?, ?, ?, ?)";
+        String insertSQL = "INSERT INTO task(id, title, description, targetdate, done) VALUES (?, ?, ?, ?, ?)";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
-            preparedStatement.setInt(1, idCounter++);
+             PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
+
+            preparedStatement.setInt(1, task.getId());
             preparedStatement.setString(2, task.getTitle());
             preparedStatement.setString(3, task.getDescription());
-            preparedStatement.setString(4, task.getTargetDate());
+            preparedStatement.setDate(4, Date.valueOf(task.getTargetDate()));
             preparedStatement.setBoolean(5, task.isDone());
+
             int row = preparedStatement.executeUpdate();
-            System.out.println("Created task with " + (idCounter-1) + " id ");
+            System.out.println("Inserted " + row + " row(s)!");
+            System.out.println("Created task with " + task.getId() + " id ");
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
